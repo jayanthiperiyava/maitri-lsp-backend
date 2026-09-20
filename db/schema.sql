@@ -124,6 +124,12 @@ CREATE TABLE IF NOT EXISTS attendance (
 -- no matching check-in.
 ALTER TABLE psr ADD COLUMN IF NOT EXISTS attendance_id TEXT REFERENCES attendance(id) ON DELETE SET NULL;
 
+-- Headcount, captured directly on the Attendance screen once a session's
+-- underway (separate from psr.students_present, which is filled in later
+-- as part of the session-quality report and may not always be the same
+-- number if it's corrected afterward).
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS students_present INTEGER;
+
 CREATE TABLE IF NOT EXISTS uploads (
   id             TEXT PRIMARY KEY,
   file_name      TEXT NOT NULL,
@@ -135,15 +141,22 @@ CREATE TABLE IF NOT EXISTS uploads (
   storage_path   TEXT   -- set by /api/files upload endpoint; null if metadata-only
 );
 
+-- The publicly-openable URL for this file (R2's public URL, or a
+-- request-relative one for local-disk mode). storage_path alone isn't
+-- enough to open a file -- for R2 it's just the object key, not a URL.
+ALTER TABLE uploads ADD COLUMN IF NOT EXISTS file_url TEXT;
+
 CREATE TABLE IF NOT EXISTS content (
   id            TEXT PRIMARY KEY,
   title         TEXT NOT NULL,
   category_id   TEXT REFERENCES categories(id) ON DELETE SET NULL,
-  file_type     TEXT,   -- PDF / PPT
+  file_type     TEXT,   -- PDF / PPT / Document / Excel / Audio / Video / Image / Other
   uploaded_by   TEXT REFERENCES resources(id) ON DELETE SET NULL,
   date          DATE NOT NULL,
   storage_path  TEXT
 );
+
+ALTER TABLE content ADD COLUMN IF NOT EXISTS file_url TEXT;
 
 CREATE TABLE IF NOT EXISTS overrides (
   id              TEXT PRIMARY KEY,

@@ -8,6 +8,7 @@ const { router: authRouter } = require('./routes/auth');
 const { router: tablesRouter, TABLES, fetchTable } = require('./routes/tables');
 const overridesRouter = require('./routes/overrides');
 const filesRouter = require('./routes/files');
+const exportRouter = require('./routes/export');
 const { rowToRecord } = require('./caseConvert');
 
 const app = express();
@@ -56,6 +57,7 @@ app.get('/api/db', async (req, res, next) => {
 
 app.use('/api/overrides', overridesRouter);
 app.use('/api/files', filesRouter);
+app.use('/api/export', exportRouter);
 app.use('/api', tablesRouter);
 
 app.use((err, req, res, next) => {
