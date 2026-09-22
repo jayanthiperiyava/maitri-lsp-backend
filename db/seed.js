@@ -34,9 +34,9 @@ async function seed() {
 
     await pool.query(`
       INSERT INTO categories (id, pillar, topic, subtopic) VALUES
-        ('LSS-VE-OTH-000', 'Value Education', 'OTHERS', 'OTHERS'),
-        ('LSS-EE-OTH-000', 'Environment Education', 'OTHERS', 'OTHERS'),
-        ('LSS-HH-OTH-000', 'Health & Hygiene', 'OTHERS', 'OTHERS'),
+        ('LSS-VE-OTH-000', 'Values', 'OTHERS', 'OTHERS'),
+        ('LSS-EE-OTH-000', 'Environment', 'OTHERS', 'OTHERS'),
+        ('LSS-HH-OTH-000', 'Health and Hygiene', 'OTHERS', 'OTHERS'),
         ('LSS-SS-CS-001', 'Soft Skills', 'Communication Skills', 'Empathy'),
         ('LSS-SS-CS-002', 'Soft Skills', 'Communication Skills', 'Body Language'),
         ('LSS-CR-OTH-000', 'Creativity', 'OTHERS', 'OTHERS')

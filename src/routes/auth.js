@@ -27,6 +27,9 @@ router.post('/login', async (req, res, next) => {
       return res.status(401).json({ ok: false, error: 'No account found for that phone number.' });
     }
     const resource = rowToRecord(rows[0]);
+    if (resource.active === false) {
+      return res.status(401).json({ ok: false, error: 'This account has been deactivated. Contact your Admin.' });
+    }
     const match = await bcrypt.compare(password, resource.passwordHash);
     if (!match) {
       return res.status(401).json({ ok: false, error: 'Incorrect password.' });

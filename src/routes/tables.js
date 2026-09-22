@@ -76,6 +76,14 @@ router.get('/:table', async (req, res, next) => {
 // the client already generated via nextId()/nextIds(). If that id is
 // already taken, we self-heal by asking Postgres for the true next free
 // number with the same prefix and retrying (see header comment).
+function friendlyDuplicateMessage(constraintName) {
+  const known = {
+    beneficiaries_school_class_section_unique: 'A beneficiary with this School, Class and Section already exists.',
+    categories_pillar_topic_subtopic_unique: 'A category with this Pillar, Topic and Sub-topic already exists.',
+  };
+  return known[constraintName] || 'Duplicate id or unique field';
+}
+
 router.post('/:table', async (req, res, next) => {
   try {
     const clientTable = req.params.table;
@@ -113,7 +121,7 @@ router.post('/:table', async (req, res, next) => {
         const isIdConflict = err.code === '23505' && /_pkey$/.test(err.constraint || '');
         if (!isIdConflict || !idPattern) {
           if (err.code === '23505') {
-            return res.status(409).json({ error: 'Duplicate id or unique field', detail: err.detail });
+            return res.status(409).json({ error: friendlyDuplicateMessage(err.constraint), detail: err.detail });
           }
           throw err;
         }
@@ -163,6 +171,9 @@ router.patch('/:table/:id', async (req, res, next) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     res.json(scrub(clientTable, rowToRecord(rows[0])));
   } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: friendlyDuplicateMessage(err.constraint), detail: err.detail });
+    }
     next(err);
   }
 });

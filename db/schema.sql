@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS resources (
   updated_at            TIMESTAMPTZ DEFAULT now()
 );
 
+-- Active/inactive toggle -- an inactive resource can't log in (checked in
+-- routes/auth.js) but its historical attendance/session records stay put.
+ALTER TABLE resources ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE;
+
 CREATE TABLE IF NOT EXISTS beneficiaries (
   id       TEXT PRIMARY KEY,
   school   TEXT NOT NULL,
@@ -32,12 +36,35 @@ CREATE TABLE IF NOT EXISTS beneficiaries (
   section  TEXT
 );
 
+-- One beneficiary per (school, class, section) combination -- a functional
+-- index (not a plain UNIQUE constraint) so a blank section normalizes to ''
+-- for comparison instead of two NULLs being treated as distinct, which
+-- would otherwise let accidental duplicates slip through with the section
+-- field left empty. Case-insensitive to match the app's own duplicate
+-- checks elsewhere.
+CREATE UNIQUE INDEX IF NOT EXISTS beneficiaries_school_class_section_unique
+  ON beneficiaries (LOWER(school), LOWER(COALESCE(class, '')), LOWER(COALESCE(section, '')));
+
 CREATE TABLE IF NOT EXISTS categories (
   id        TEXT PRIMARY KEY,
-  pillar    TEXT NOT NULL,   -- Value Education / Environment Education / Health & Hygiene / Soft Skills / Creativity
+  pillar    TEXT NOT NULL,   -- Values / Health and Hygiene / Soft Skills / Environment / Creativity
   topic     TEXT,
   subtopic  TEXT
 );
+
+-- Renames the original seed pillar names to the fixed 5-value set the
+-- Categories/Life Skills dropdown now uses, so existing rows (and every
+-- psr/session/content record that joins to them) show the new names too --
+-- not just newly-created categories. Safe to re-run: a row already renamed
+-- won't match the old name a second time.
+UPDATE categories SET pillar = 'Values' WHERE pillar = 'Value Education';
+UPDATE categories SET pillar = 'Environment' WHERE pillar = 'Environment Education';
+UPDATE categories SET pillar = 'Health and Hygiene' WHERE pillar = 'Health & Hygiene';
+
+-- One category per (pillar, topic, subtopic) combination, same
+-- blank-normalizing approach as beneficiaries above.
+CREATE UNIQUE INDEX IF NOT EXISTS categories_pillar_topic_subtopic_unique
+  ON categories (LOWER(pillar), LOWER(COALESCE(topic, '')), LOWER(COALESCE(subtopic, '')));
 
 CREATE TABLE IF NOT EXISTS geo (
   id             TEXT PRIMARY KEY,
